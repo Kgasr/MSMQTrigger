@@ -1,0 +1,14 @@
+{
+  "EventLogging": { // Ensure source exists if app is unable to create due to permission issue
+    "EventSource": "MSMQTriggerApp",
+    "LogName": "Application"
+  },
+"SmtpSettings": {
+    "SmtpServer": "",
+    "SmtpPort": 587,
+    "SmtpUser": "",
+    "SmtpPass": "",
+    "FromAddress": "",
+    "ToAddress": ""
+  }
+}

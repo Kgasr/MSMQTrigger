@@ -39,7 +39,7 @@ namespace MsmqTriggerApp
 
                 // Build configuration
                 var configuration = new ConfigurationBuilder()
-                    .AddJsonFile("appsettings.json")
+                    .AddJsonFile("settings.json")
                     .Build();
 
                 source = configuration["EventLogging:EventSource"] ?? source; // Default SMTP server
