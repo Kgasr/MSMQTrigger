@@ -61,11 +61,10 @@ namespace MsmqTrigger
                     
                     // Add all recipients to the email
                     foreach (var address in emailAddresses.Distinct())
-                    {   
-                        string finalAddress = address == "root@localhost" ? "karangupta125@gmail.com" : address;
-                        if (!mailMessage.To.Contains(new MailAddress(finalAddress))) // Avoid duplicate To addresses
+                    {                        
+                        if (!mailMessage.To.Contains(new MailAddress(address))) // Avoid duplicate To addresses
                         {
-                            mailMessage.To.Add(finalAddress);
+                            mailMessage.To.Add(address);
                         }
 
                     }
