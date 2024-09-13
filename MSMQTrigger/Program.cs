@@ -1,66 +1,50 @@
-﻿using MsmqUtils;
-using MsmqTrigger;
-using System.Text;
-using System.Diagnostics;
+﻿using System.Text;
 using Microsoft.Extensions.Configuration;
 
+using Logging;
+using MsmqTrigger;
 
 namespace MsmqTriggerApp
 {
     class Program
     {
-        static string source = "DefaultApp";        // Ensure source exists if app is unable to create due to permission issue
-        static string logName = "System";
-        private static void LogEventData(string msg, string eventLogEntryType)
+        static async Task Main(string[] args)
         {
-            EventLogEntryType type = EventLogEntryType.Information;         // by default log type as information
+            string messageLabel = args[0];                                  // MSMQ Trigger passes first argument as Label
+            string encodedMessageBody = args[1];                            // MSMQ Trigger passes second argument as body
 
-            // Check if the event source exists, if not, create it
-            if (!EventLog.SourceExists(source))
-            {
-                EventLog.CreateEventSource(source, logName);
-            }
-            if (eventLogEntryType == "error")
-            {
-                type = EventLogEntryType.Error;                             // change log type to error in case of any error
-            }
-            EventLog.WriteEntry(source, msg, type);
-        }
+            // Build configuration
+            var configuration = new ConfigurationBuilder()
+                .AddJsonFile("settings.json")
+                .Build();
 
-        static void Main(string[] args)
-        {
+            // Seperate log file for each message
+            //string fileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, messageLabel + "-" + configuration["Logging:LogFile"]);
+
+            // Single log file for all messages.
+            string fileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, configuration["Logging:LogFile"]);
+            
+            var logger = LoggerProvider.CreateLogger(fileName,Enum.Parse<LogLevel>(configuration["Logging:LogLevel"], true), configuration["Logging:LogFormat"]);
+           
             try
-            {
-                string messageLabel = args[0];                                  // MSMQ Trigger passes first argument as Label
-                string encodedMessageBody = args[1];                            // MSMQ Trigger passes second argument as body
+            {            
+                string messageBody = Encoding.UTF8.GetString(Convert.FromBase64String(encodedMessageBody));
 
-                string encodedMessage = (string)encodedMessageBody;             // Decode the message body to get actual message
-                string messageBody = Encoding.UTF8.GetString(Convert.FromBase64String(encodedMessage));
+                await logger.Log(LogLevel.Debug, "Message Label : " + messageLabel);
+                await logger.Log(LogLevel.Debug, "Message Body : " + messageBody);
 
-                // Build configuration
-                var configuration = new ConfigurationBuilder()
-                    .AddJsonFile("settings.json")
-                    .Build();
+                await logger.Log(LogLevel.Information, $"{messageLabel} : Setting Up Email List & extracting attachments started");
+                var (emailAddresses, attachmentPaths, cleanedMessageBody) = MsmqUtils.Utils.ExtractFieldsFromJson(messageBody);
+                await logger.Log(LogLevel.Information, $"{messageLabel} : Setting Up Email List & extracting attachments Completed");
 
-                source = configuration["EventLogging:EventSource"] ?? source; // Default SMTP server
-                logName = configuration["EventLogging:LogName"] ?? logName; // Default user
-
-                LogEventData(messageLabel, "info");
-                LogEventData(messageBody, "info");
-
-
-                LogEventData("Setting Up Email List & extracting attachments started", "info");
-                var (emailAddresses, attachmentPaths, cleanedMessageBody) = Utils.ExtractFieldsFromJson(messageBody);
-                LogEventData("Setting Up Email List & extracting attachments completed", "info");
-
-                LogEventData("Email Trigger Initiated", "info");
-                TriggerEmail triggerEmail = new(configuration);
+                await logger.Log(LogLevel.Information, $" {messageLabel} : Email Trigger Initiated");
+                TriggerEmail triggerEmail = new(configuration.GetSection("SmtpSettings"));
                 string result = triggerEmail.SendEmail(emailAddresses, messageLabel, cleanedMessageBody, attachmentPaths);
-                LogEventData("Email Trigger Completed with status : " + result, "info");
+                await logger.Log(LogLevel.Information, $"{messageLabel} : Email Trigger Completed with status: {result}");
             }
             catch (Exception ex)
             {
-                LogEventData("Process failed with error : " + ex.Message, "error"); ;
+                await logger.Log(LogLevel.Error, $"{messageLabel} : Process failed with error : ", ex);
             }
 
         }

@@ -1,9 +1,10 @@
 {
-  "EventLogging": { // Ensure source exists if app is unable to create due to permission issue
-    "EventSource": "MSMQTriggerApp",
-    "LogName": "Application"
+  "Logging": {
+    "LogLevel": "debug",
+    "LogFormat": "{Timestamp} [{Level}] {Message}{NewLine}{Exception}",
+    "LogFile": "Log.txt"
   },
-"SmtpSettings": {
+  "SmtpSettings": {
     "SmtpServer": "",
     "SmtpPort": 587,
     "SmtpUser": "",

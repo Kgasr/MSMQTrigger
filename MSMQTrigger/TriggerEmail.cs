@@ -21,14 +21,14 @@ namespace MsmqTrigger
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
 
             // Assign default values in case configuration keys are null
-            smtpServer = _configuration["SmtpSettings:SmtpServer"] ?? "smtp-mail.outlook.com"; // Default SMTP server
-            smtpUser = _configuration["SmtpSettings:SmtpUser"] ?? "default_user@domain.com"; // Default user
-            smtpPass = _configuration["SmtpSettings:SmtpPass"] ?? ""; // Default password
-            fromAddress = _configuration["SmtpSettings:FromAddress"] ?? "no-reply@domain.com"; // Default from address
-            toAddress = _configuration["SmtpSettings:ToAddress"] ?? "default_to@domain.com"; // Default to address
+            smtpServer = _configuration["SmtpServer"] ?? "smtp-mail.outlook.com"; // Default SMTP server
+            smtpUser = _configuration["SmtpUser"] ?? "default_user@domain.com"; // Default user
+            smtpPass = _configuration["SmtpPass"] ?? ""; // Default password
+            fromAddress = _configuration["FromAddress"] ?? "no-reply@domain.com"; // Default from address
+            toAddress = _configuration["ToAddress"] ?? "default_to@domain.com"; // Default to address
 
             // Use int.TryParse to avoid null reference and convert the port
-            if (!int.TryParse(_configuration["SmtpSettings:SmtpPort"], out smtpPort))
+            if (!int.TryParse(_configuration["SmtpPort"], out smtpPort))
             {
                 smtpPort = 587; // Default port value if parsing fails
             }
@@ -61,8 +61,8 @@ namespace MsmqTrigger
                     
                     // Add all recipients to the email
                     foreach (var address in emailAddresses.Distinct())
-                    {                        
-                        if (!mailMessage.To.Contains(new MailAddress(address))) // Avoid duplicate To addresses
+                    {
+                       if (!mailMessage.To.Contains(new MailAddress(address))) // Avoid duplicate To addresses
                         {
                             mailMessage.To.Add(address);
                         }
